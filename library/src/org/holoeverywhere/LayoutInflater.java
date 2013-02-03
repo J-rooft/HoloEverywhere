@@ -9,10 +9,8 @@ import java.util.WeakHashMap;
 
 import org.holoeverywhere.SystemServiceManager.SystemServiceCreator;
 import org.holoeverywhere.SystemServiceManager.SystemServiceCreator.SystemService;
-import org.holoeverywhere.app.Application;
 import org.holoeverywhere.internal.DialogTitle;
 import org.holoeverywhere.internal.NumberPickerEditText;
-import org.holoeverywhere.preference.PreferenceFrameLayout;
 import org.holoeverywhere.widget.AutoCompleteTextView;
 import org.holoeverywhere.widget.Button;
 import org.holoeverywhere.widget.CalendarView;
@@ -22,7 +20,6 @@ import org.holoeverywhere.widget.DatePicker;
 import org.holoeverywhere.widget.Divider;
 import org.holoeverywhere.widget.EditText;
 import org.holoeverywhere.widget.ExpandableListView;
-import org.holoeverywhere.widget.FragmentBreadCrumbs;
 import org.holoeverywhere.widget.FrameLayout;
 import org.holoeverywhere.widget.GridView;
 import org.holoeverywhere.widget.LinearLayout;
@@ -50,6 +47,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 
+import com.actionbarsherlock.internal.view.menu.ContextMenuDecorView;
+import com.actionbarsherlock.internal.view.menu.ContextMenuListener;
 import com.actionbarsherlock.internal.view.menu.ExpandedMenuView;
 import com.actionbarsherlock.internal.view.menu.HoloListMenuItemView;
 import com.actionbarsherlock.internal.widget.ActionBarContainer;
@@ -112,11 +111,9 @@ public class LayoutInflater extends android.view.LayoutInflater implements
         remap(SeekBar.class);
         remap(Button.class);
         remap(CheckedTextView.class);
-        remap(FragmentBreadCrumbs.class);
         remap(ToggleButton.class);
         remap(RadioButton.class);
         remap(CheckBox.class);
-        remap(PreferenceFrameLayout.class);
         remap(ViewPager.class);
         remap(PagerTitleStrip.class);
         remap(WebView.class);
@@ -299,6 +296,12 @@ public class LayoutInflater extends android.view.LayoutInflater implements
         }
     }
 
+    public ContextMenuDecorView makeDecorView(int layout, ContextMenuListener listener) {
+        ContextMenuDecorView view = new ContextMenuDecorView(getContext(), listener);
+        inflate(layout, view, true);
+        return view;
+    }
+
     @Override
     protected View onCreateView(String name, AttributeSet attrs)
             throws ClassNotFoundException {
@@ -340,7 +343,7 @@ public class LayoutInflater extends android.view.LayoutInflater implements
 
     @SuppressLint("NewApi")
     private View prepareView(View view) {
-        if (Application.config().isDisableOverscrollEffects() && VERSION.SDK_INT >= 9) {
+        if (HoloEverywhere.DISABLE_OVERSCROLL_EFFECT && VERSION.SDK_INT >= 9) {
             view.setOverScrollMode(View.OVER_SCROLL_NEVER);
         }
         return view;

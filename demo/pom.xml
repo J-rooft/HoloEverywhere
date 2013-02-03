@@ -10,7 +10,8 @@
 	<parent>
 		<groupId>org.holoeverywhere</groupId>
 		<artifactId>parent</artifactId>
-		<version>1.4.2</version>
+		<version>1.4.3-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<dependencies>
@@ -21,11 +22,29 @@
 
 		<dependency>
 			<groupId>org.holoeverywhere</groupId>
-			<artifactId>slidingmenu</artifactId>
-			<version>1.4.2</version>
+			<artifactId>library</artifactId>
+			<version>${project.version}</version>
+			<type>apklib</type>
+		</dependency>
+
+		<dependency>
+			<groupId>org.holoeverywhere</groupId>
+			<artifactId>addon-slidingmenu</artifactId>
+			<version>${project.version}</version>
+			<type>apklib</type>
+		</dependency>
+
+		<dependency>
+			<groupId>org.holoeverywhere</groupId>
+			<artifactId>addon-preferences</artifactId>
+			<version>${project.version}</version>
 			<type>apklib</type>
 		</dependency>
 	</dependencies>
+
+	<properties>
+		<holo.resbuilder.buildAll>false</holo.resbuilder.buildAll>
+	</properties>
 
 	<build>
 		<sourceDirectory>src</sourceDirectory>
@@ -33,11 +52,16 @@
 		<plugins>
 			<plugin>
 				<groupId>org.holoeverywhere</groupId>
-				<artifactId>translator</artifactId>
+				<artifactId>resbuilder</artifactId>
 				<configuration>
-					<input>
-						<param>strings.json</param>
-					</input>
+					<includeDirs>
+						<dir>${project.basedir}/resbuilder</dir>
+						<dir>${project.basedir}/../library/resbuilder</dir>
+					</includeDirs>
+					<inputFiles>
+						<file>${project.basedir}/resbuilder/key_strings.json</file>
+						<file>${project.basedir}/resbuilder/key_styles.json</file>
+					</inputFiles>
 				</configuration>
 			</plugin>
 
@@ -45,6 +69,23 @@
 				<groupId>com.jayway.maven.plugins.android.generation2</groupId>
 				<artifactId>android-maven-plugin</artifactId>
 				<extensions>true</extensions>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>zipalign</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<zipalign>
+						<skip>false</skip>
+						<verbose>true</verbose>
+						<inputApk>${project.build.directory}/${project.artifactId}-${project.version}.apk</inputApk>
+						<outputApk>${project.build.directory}/${project.artifactId}-${project.version}-signed-aligned.apk</outputApk>
+					</zipalign>
+					<file>${project.build.directory}/${project.artifactId}-${project.version}-signed-aligned.apk</file>
+				</configuration>
 			</plugin>
 
 			<plugin>
@@ -52,36 +93,31 @@
 				<artifactId>maven-jarsigner-plugin</artifactId>
 				<inherited>true</inherited>
 			</plugin>
-		</plugins>
 
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.eclipse.m2e</groupId>
-					<artifactId>lifecycle-mapping</artifactId>
-					<version>1.0.0</version>
-					<configuration>
-						<lifecycleMappingMetadata>
-							<pluginExecutions>
-								<pluginExecution>
-									<pluginExecutionFilter>
-										<groupId>org.holoeverywhere</groupId>
-										<artifactId>translator</artifactId>
-										<versionRange>[1.4.0,)</versionRange>
-										<goals>
-											<goal>build</goal>
-										</goals>
-									</pluginExecutionFilter>
-									<action>
-										<execute />
-									</action>
-								</pluginExecution>
-							</pluginExecutions>
-						</lifecycleMappingMetadata>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>1.7</version>
+				<configuration>
+					<artifacts>
+						<artifact>
+							<file>${project.build.directory}/${project.artifactId}-${project.version}-signed-aligned.apk</file>
+							<type>apk</type>
+							<classifier>signed-aligned</classifier>
+						</artifact>
+					</artifacts>
+				</configuration>
+				<executions>
+					<execution>
+						<id>attach-signed-aligned</id>
+						<phase>package</phase>
+						<goals>
+							<goal>attach-artifact</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
 	</build>
 
 	<profiles>
@@ -102,64 +138,18 @@
 						<executions>
 							<execution>
 								<id>manifestUpdate</id>
-								<phase>process-resources</phase>
+								<phase>initialize</phase>
 								<goals>
 									<goal>manifest-update</goal>
 								</goals>
 							</execution>
-							<execution>
-								<phase>package</phase>
-								<goals>
-									<goal>zipalign</goal>
-								</goals>
-							</execution>
 						</executions>
 						<configuration>
-							<zipalign>
-								<verbose>true</verbose>
-								<inputApk>${project.build.directory}/${project.artifactId}-${project.version}.apk</inputApk>
-								<outputApk>${project.build.directory}/${project.artifactId}-${project.version}-signed-aligned.apk</outputApk>
-							</zipalign>
 							<manifest>
 								<versionName>${project.version}</versionName>
-								<versionCodeAutoIncrement>true</versionCodeAutoIncrement>
+								<versionCodeUpdateFromVersion>true</versionCodeUpdateFromVersion>
 							</manifest>
-							<proguard>
-								<skip>false</skip>
-								<config>${project.baseDir}/proguard.cfg</config>
-							</proguard>
-							<sign>
-								<debug>false</debug>
-							</sign>
 						</configuration>
-					</plugin>
-
-					<plugin>
-						<groupId>org.codehaus.mojo</groupId>
-						<artifactId>build-helper-maven-plugin</artifactId>
-						<configuration>
-							<artifacts>
-								<artifact>
-									<file>${project.build.directory}/${project.artifactId}-${project.version}-signed-aligned.apk</file>
-									<type>apk</type>
-									<classifier>signed-aligned</classifier>
-								</artifact>
-								<artifact>
-									<file>${project.build.directory}/proguard/mapping.txt</file>
-									<type>map</type>
-									<classifier>release</classifier>
-								</artifact>
-							</artifacts>
-						</configuration>
-						<executions>
-							<execution>
-								<id>attach-signed-aligned</id>
-								<phase>package</phase>
-								<goals>
-									<goal>attach-artifact</goal>
-								</goals>
-							</execution>
-						</executions>
 					</plugin>
 				</plugins>
 			</build>

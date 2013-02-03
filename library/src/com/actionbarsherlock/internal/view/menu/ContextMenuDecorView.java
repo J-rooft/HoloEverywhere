@@ -1,7 +1,7 @@
 
 package com.actionbarsherlock.internal.view.menu;
 
-import org.holoeverywhere.app.Application;
+import org.holoeverywhere.HoloEverywhere;
 
 import android.content.Context;
 import android.util.Log;
@@ -21,19 +21,14 @@ public final class ContextMenuDecorView extends FrameLayout {
 
         public InternalWrapper(ContextMenuListener listener) {
             if (listener == null) {
-                throw new IllegalArgumentException("Listener is null",
-                        new NullPointerException());
+                throw new IllegalArgumentException("Listener cannot be null");
             }
             this.listener = listener;
-            if (Application.isDebugMode()) {
-                Log.v(TAG, "Create new InternalWrapper with listener: "
-                        + listener);
-            }
         }
 
         @Override
         public void onCloseMenu(MenuBuilder menu, boolean allMenusAreClosing) {
-            if (Application.isDebugMode()) {
+            if (HoloEverywhere.DEBUG) {
                 Log.v(TAG, "Calling onContextMenuClosed on " + listener);
             }
             listener.onContextMenuClosed((ContextMenu) menu);
@@ -41,7 +36,7 @@ public final class ContextMenuDecorView extends FrameLayout {
 
         @Override
         public boolean onMenuItemSelected(MenuBuilder menu, MenuItem item) {
-            if (Application.isDebugMode()) {
+            if (HoloEverywhere.DEBUG) {
                 Log.v(TAG, "Calling onContextItemSelected on " + listener);
             }
             if (menu instanceof ContextMenuBuilder
@@ -69,7 +64,7 @@ public final class ContextMenuDecorView extends FrameLayout {
 
     public static View prepareDecorView(Context context, View v,
             ContextMenuListener listener, int decorViewId) {
-        if (v != null && !Application.config().isDisableContextMenu()) {
+        if (v != null) {
             v = new ContextMenuDecorView(context, v, listener);
             if (decorViewId > 0) {
                 v.setId(decorViewId);
@@ -81,26 +76,46 @@ public final class ContextMenuDecorView extends FrameLayout {
     private ContextMenuBuilder contextMenu;
     private final InternalWrapper listener;
     private MenuDialogHelper menuDialogHelper;
-    private final View view;
 
-    public ContextMenuDecorView(Context context, View view,
+    public ContextMenuDecorView(Context context,
             ContextMenuListener listener) {
         super(context);
         this.listener = new InternalWrapper(listener);
-        if (view != null) {
-            ViewParent parent = view.getParent();
-            if (parent != null && parent instanceof ViewGroup) {
-                ((ViewGroup) parent).removeView(view);
-            }
-            addView(view, android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                    android.view.ViewGroup.LayoutParams.MATCH_PARENT);
+    }
+
+    public ContextMenuDecorView(Context context, View view,
+            ContextMenuListener listener) {
+        this(context, listener);
+        attachView(view);
+    }
+
+    @Override
+    public void addView(View child) {
+        LayoutParams params = (LayoutParams) child.getLayoutParams();
+        if (params == null) {
+            params = generateDefaultLayoutParams();
         }
-        this.view = view;
+        params.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+        params.width = android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+        addView(child, params);
+    }
+
+    public synchronized void attachView(View view) {
+        if (view == null) {
+            throw new NullPointerException("View cannot be null");
+        }
+        ViewParent parent = view.getParent();
+        if (parent != null && parent instanceof ViewGroup) {
+            ((ViewGroup) parent).removeView(view);
+        }
+        removeAllViews();
+        addView(view, android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT);
     }
 
     @Override
     public boolean showContextMenuForChild(View originalView) {
-        if (Application.config().isDisableContextMenu()) {
+        if (HoloEverywhere.WRAP_TO_NATIVE_CONTEXT_MENU) {
             return super.showContextMenuForChild(originalView);
         }
         if (contextMenu == null) {
@@ -120,6 +135,6 @@ public final class ContextMenuDecorView extends FrameLayout {
     }
 
     public View unwrap() {
-        return view;
+        return getChildCount() > 0 ? getChildAt(0) : null;
     }
 }

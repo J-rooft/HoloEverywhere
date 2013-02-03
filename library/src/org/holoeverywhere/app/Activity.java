@@ -4,6 +4,8 @@ package org.holoeverywhere.app;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.holoeverywhere.HoloEverywhere;
+import org.holoeverywhere.ThemeManager;
 import org.holoeverywhere.addon.Sherlock;
 import org.holoeverywhere.addon.Sherlock.SherlockA;
 import org.holoeverywhere.addons.IAddon;
@@ -29,6 +31,7 @@ public abstract class Activity extends _HoloActivity {
     public static final String ADDON_SHERLOCK = "Sherlock";
     public static final String ADDON_SLIDING_MENU = "SlidingMenu";
     private final List<IAddon<?, ?>> addons = new ArrayList<IAddon<?, ?>>();
+    private MenuInflater mMenuInflater;
 
     @Override
     public void addContentView(View view, LayoutParams params) {
@@ -102,7 +105,22 @@ public abstract class Activity extends _HoloActivity {
 
     @Override
     public MenuInflater getSupportMenuInflater() {
-        return requireSherlock().getMenuInflater();
+        if (mMenuInflater != null) {
+            return mMenuInflater;
+        }
+        mMenuInflater = new MenuInflater(getSupportActionBarContext(), this);
+        return mMenuInflater;
+    }
+
+    public Bundle instanceState(Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            return savedInstanceState;
+        }
+        Bundle extras = getIntent().getExtras();
+        if (extras != null && extras.containsKey(ThemeManager.KEY_INSTANCE_STATE)) {
+            return extras.getBundle(ThemeManager.KEY_INSTANCE_STATE);
+        }
+        return null;
     }
 
     public boolean isAddonAttached(Class<? extends IAddon<?, ?>> clazz) {
@@ -132,6 +150,7 @@ public abstract class Activity extends _HoloActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        savedInstanceState = instanceState(savedInstanceState);
         super.onCreate(savedInstanceState);
         for (IAddon<?, ?> addon : addons) {
             addon.activity(this).onCreate(savedInstanceState);
@@ -225,6 +244,7 @@ public abstract class Activity extends _HoloActivity {
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
+        savedInstanceState = instanceState(savedInstanceState);
         for (IAddon<?, ?> addon : addons) {
             addon.activity(this).onPostCreate(savedInstanceState);
         }
@@ -296,6 +316,10 @@ public abstract class Activity extends _HoloActivity {
 
     @Override
     public void requestWindowFeature(long featureIdLong) {
+        if (!super.isWasInited()) {
+            super.requestWindowFeature(featureIdLong);
+            return;
+        }
         int featureId = (int) featureIdLong;
         for (IAddon<?, ?> addon : addons) {
             if (addon.activity(this).requestWindowFeature(featureId)) {
@@ -323,10 +347,10 @@ public abstract class Activity extends _HoloActivity {
         if (name == null) {
             return;
         }
-        String className = getConfig().getHoloEverywherePackage()
-                + ".addon." + name;
+        String className = HoloEverywhere.PACKAGE + ".addon." + name;
         try {
-            requireAddon((Class<? extends IAddon<?, ?>>) Class.forName(className));
+            requireAddon((Class<? extends IAddon<?, ?>>) Class.forName(className, true,
+                    getClassLoader()));
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Failed to init addon", e);
         }
@@ -336,9 +360,15 @@ public abstract class Activity extends _HoloActivity {
         return requireAddon(Sherlock.class).activity(this);
     }
 
+    public Bundle saveInstanceState() {
+        Bundle bundle = new Bundle(getClassLoader());
+        onSaveInstanceState(bundle);
+        return bundle.size() > 0 ? bundle : null;
+    }
+
     @Override
     public void setContentView(int layoutResId) {
-        setContentView(getLayoutInflater().inflate(layoutResId));
+        setContentView(getLayoutInflater().makeDecorView(layoutResId, this));
     }
 
     @Override
@@ -380,6 +410,12 @@ public abstract class Activity extends _HoloActivity {
     @Override
     public void setSupportSecondaryProgress(int secondaryProgress) {
         requireSherlock().setSecondaryProgress(secondaryProgress);
+    }
+
+    @Override
+    public void setTheme(int resid) {
+        mMenuInflater = null;
+        super.setTheme(resid);
     }
 
     public void setUiOptions(int uiOptions) {

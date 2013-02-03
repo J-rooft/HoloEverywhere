@@ -1,12 +1,11 @@
 
 package android.support.v4.app;
 
+import org.holoeverywhere.HoloEverywhere.PreferenceImpl;
 import org.holoeverywhere.IHoloFragment;
 import org.holoeverywhere.LayoutInflater;
 import org.holoeverywhere.app.Activity;
 import org.holoeverywhere.app.Application;
-import org.holoeverywhere.app.Application.Config;
-import org.holoeverywhere.app.Application.Config.PreferenceImpl;
 import org.holoeverywhere.preference.SharedPreferences;
 
 import android.os.Bundle;
@@ -15,6 +14,7 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.internal.view.menu.ContextMenuBuilder;
 import com.actionbarsherlock.internal.view.menu.ContextMenuDecorView;
 import com.actionbarsherlock.internal.view.menu.ContextMenuItemWrapper;
@@ -36,11 +36,6 @@ public abstract class _HoloFragment extends Fragment implements IHoloFragment {
     public void createContextMenu(ContextMenuBuilder contextMenuBuilder,
             View view, ContextMenuInfo menuInfo, ContextMenuListener listener) {
         activity.createContextMenu(contextMenuBuilder, view, menuInfo, listener);
-    }
-
-    @Override
-    public Config getConfig() {
-        return activity.getConfig();
     }
 
     protected int getContainerId() {
@@ -84,6 +79,11 @@ public abstract class _HoloFragment extends Fragment implements IHoloFragment {
     @Override
     public SharedPreferences getSharedPreferences(String name, int mode) {
         return activity.getSharedPreferences(name, mode);
+    }
+
+    @Override
+    public ActionBar getSupportActionBar() {
+        return getSupportActivity().getSupportActionBar();
     }
 
     @Override

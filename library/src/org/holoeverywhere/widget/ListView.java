@@ -5,10 +5,10 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.holoeverywhere.HoloEverywhere;
 import org.holoeverywhere.IHoloActivity.OnWindowFocusChangeListener;
 import org.holoeverywhere.R;
 import org.holoeverywhere.app.Activity;
-import org.holoeverywhere.app.Application;
 import org.holoeverywhere.util.LongSparseArray;
 import org.holoeverywhere.widget.HeaderViewListAdapter.ViewInfo;
 import org.holoeverywhere.widget.ListAdapterWrapper.ListAdapterCallback;
@@ -21,6 +21,8 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.SparseBooleanArray;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -109,8 +111,43 @@ public class ListView extends android.widget.ListView implements OnWindowFocusCh
         }
     }
 
-    public static final int CHOICE_MODE_MULTIPLE_MODAL = AbsListView.CHOICE_MODE_MULTIPLE_MODAL;
+    static final class SavedState extends BaseSavedState {
+        public static final Creator<SavedState> CREATOR = new Creator<SavedState>() {
+            @Override
+            public SavedState createFromParcel(Parcel parcel) {
+                return new SavedState(parcel);
+            }
 
+            @Override
+            public SavedState[] newArray(int size) {
+                return new SavedState[size];
+            }
+        };
+        public SparseBooleanArray mCheckStates;
+        public int mChoiceMode;
+
+        public SavedState(Parcel parcel) {
+            super(parcel);
+            mChoiceMode = parcel.readInt();
+            mCheckStates = parcel.readSparseBooleanArray();
+        }
+
+        public SavedState(Parcelable superState) {
+            super(superState);
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            super.writeToParcel(dest, flags);
+            dest.writeInt(mChoiceMode);
+            dest.writeSparseBooleanArray(mCheckStates);
+        }
+    }
+
+    public static final int CHOICE_MODE_MULTIPLE = AbsListView.CHOICE_MODE_MULTIPLE;
+    public static final int CHOICE_MODE_MULTIPLE_MODAL = AbsListView.CHOICE_MODE_MULTIPLE_MODAL;
+    public static final int CHOICE_MODE_NONE = AbsListView.CHOICE_MODE_NONE;
+    public static final int CHOICE_MODE_SINGLE = AbsListView.CHOICE_MODE_SINGLE;
     private static final boolean USE_ACTIVATED = VERSION.SDK_INT >= VERSION_CODES.HONEYCOMB;
     private Activity mActivity;
     private ListAdapterWrapper mAdapter;
@@ -126,6 +163,7 @@ public class ListView extends android.widget.ListView implements OnWindowFocusCh
     private FastScroller mFastScroller;
     private final List<ViewInfo> mFooterViewInfos = new ArrayList<ViewInfo>(),
             mHeaderViewInfos = new ArrayList<ViewInfo>();
+    private boolean mForceFastScrollAlwaysVisibleDisable = false;
     private boolean mForceHeaderListAdapter = false;
     private boolean mIsAttached;
     private int mLastScrollState = OnScrollListener.SCROLL_STATE_IDLE;
@@ -169,7 +207,7 @@ public class ListView extends android.widget.ListView implements OnWindowFocusCh
         if (context instanceof Activity) {
             setActivity((Activity) context);
         }
-        if (Application.config().isDisableOverscrollEffects() && VERSION.SDK_INT >= 9) {
+        if (HoloEverywhere.DISABLE_OVERSCROLL_EFFECT && VERSION.SDK_INT >= 9) {
             setOverScrollMode(OVER_SCROLL_NEVER);
         }
 
@@ -279,6 +317,10 @@ public class ListView extends android.widget.ListView implements OnWindowFocusCh
         return mActivity;
     }
 
+    public ListAdapter getAdapterSource() {
+        return mAdapter.getWrappedAdapter();
+    }
+
     @Override
     public int getCheckedItemCount() {
         return mCheckedItemCount;
@@ -347,10 +389,13 @@ public class ListView extends android.widget.ListView implements OnWindowFocusCh
 
     @Override
     public int getVerticalScrollbarWidth() {
+        mForceFastScrollAlwaysVisibleDisable = true;
+        final int superWidth = super.getVerticalScrollbarWidth();
+        mForceFastScrollAlwaysVisibleDisable = false;
         if (isFastScrollAlwaysVisible()) {
-            return Math.max(super.getVerticalScrollbarWidth(), mFastScroller.getWidth());
+            return Math.max(superWidth, mFastScroller.getWidth());
         }
-        return super.getVerticalScrollbarWidth();
+        return superWidth;
     }
 
     void invokeOnItemScrollListener() {
@@ -371,6 +416,9 @@ public class ListView extends android.widget.ListView implements OnWindowFocusCh
 
     @Override
     public boolean isFastScrollAlwaysVisible() {
+        if (mForceFastScrollAlwaysVisibleDisable) {
+            return false;
+        }
         return mFastScrollEnabled && mFastScroller.isAlwaysShowEnabled();
     }
 
@@ -500,6 +548,32 @@ public class ListView extends android.widget.ListView implements OnWindowFocusCh
             setStateOnView(view, false);
         }
         return view;
+    }
+
+    @Override
+    public void onRestoreInstanceState(Parcelable sState) {
+        if (!(sState instanceof SavedState)) {
+            super.onRestoreInstanceState(sState);
+        }
+        SavedState state = (SavedState) sState;
+        super.onRestoreInstanceState(state.getSuperState());
+        if (state.mChoiceMode != CHOICE_MODE_NONE) {
+            setChoiceMode(state.mChoiceMode);
+        }
+        if (state.mCheckStates != null) {
+            for (int i = 0; i < state.mCheckStates.size(); i++) {
+                int key = state.mCheckStates.keyAt(i);
+                setItemChecked(key, state.mCheckStates.get(key, false));
+            }
+        }
+    }
+
+    @Override
+    public Parcelable onSaveInstanceState() {
+        SavedState state = new SavedState(super.onSaveInstanceState());
+        state.mChoiceMode = mChoiceMode;
+        state.mCheckStates = mCheckStates;
+        return state;
     }
 
     @Override
