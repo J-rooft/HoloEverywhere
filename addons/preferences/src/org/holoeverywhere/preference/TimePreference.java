@@ -27,13 +27,13 @@ public class TimePreference extends DialogPreference {
             calendar.set(Calendar.HOUR_OF_DAY, mHour = hour);
             calendar.set(Calendar.MINUTE, mMinute = minute);
             TimePreference.this.onTimeSet(timePicker, calendar.getTimeInMillis(), hour, minute);
+            updateDialogState();
         }
     };
 
-    private long mCurrentTime = Long.MAX_VALUE;
-
+    private long mDefaultTime;
+    private boolean mDefaultTimeSetted = false;
     private int mHour, mMinute;
-
     private OnTimeSetListener mOnTimeSetListener;
 
     public TimePreference(Context context) {
@@ -50,6 +50,7 @@ public class TimePreference extends DialogPreference {
                 R.style.Holo_PreferenceTime);
         switch (a.getInt(R.styleable.TimePreference_is24HourView, 0)) {
             case 0:
+            default:
                 // Auto
                 m24HourView = DateFormat.is24HourFormat(context);
                 break;
@@ -65,11 +66,11 @@ public class TimePreference extends DialogPreference {
         a.recycle();
     }
 
-    public long getCurrentTime() {
-        if (mCurrentTime == Long.MAX_VALUE) {
+    public long getDefaultTime() {
+        if (!mDefaultTimeSetted) {
             return System.currentTimeMillis();
         }
-        return mCurrentTime;
+        return mDefaultTime;
     }
 
     public int getHour() {
@@ -97,7 +98,7 @@ public class TimePreference extends DialogPreference {
     protected String onGetDefaultValue(TypedArray a, int index) {
         String value = a.getString(index);
         if (value == null || value.length() == 0) {
-            value = String.valueOf(getCurrentTime());
+            value = String.valueOf(getDefaultTime());
         }
         return value;
     }
@@ -105,13 +106,17 @@ public class TimePreference extends DialogPreference {
     @Override
     protected void onSetInitialValue(boolean restorePersistedValue, Object defaultValue) {
         if (restorePersistedValue) {
-            defaultValue = getPersistedLong(getCurrentTime());
+            defaultValue = getPersistedLong(getDefaultTime());
         }
         long time;
         try {
-            time = Long.parseLong(String.valueOf(defaultValue));
+            if (defaultValue instanceof Long) {
+                time = ((Long) defaultValue).longValue();
+            } else {
+                time = Long.parseLong(String.valueOf(defaultValue));
+            }
         } catch (Exception e) {
-            time = getCurrentTime();
+            time = getDefaultTime();
         }
         setTime(time);
     }
@@ -122,8 +127,13 @@ public class TimePreference extends DialogPreference {
         }
     }
 
-    public void setCurrentTime(long time) {
-        mCurrentTime = time;
+    public void resetDefaultTime() {
+        mDefaultTimeSetted = false;
+    }
+
+    public void setDefaultTime(long defaultTime) {
+        mDefaultTime = defaultTime;
+        mDefaultTimeSetted = true;
     }
 
     public void setHour(int hour) {

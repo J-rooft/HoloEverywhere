@@ -4,6 +4,7 @@ package org.holoeverywhere;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -11,46 +12,19 @@ import org.holoeverywhere.SystemServiceManager.SystemServiceCreator;
 import org.holoeverywhere.SystemServiceManager.SystemServiceCreator.SystemService;
 import org.holoeverywhere.internal.DialogTitle;
 import org.holoeverywhere.internal.NumberPickerEditText;
-import org.holoeverywhere.widget.AutoCompleteTextView;
-import org.holoeverywhere.widget.Button;
-import org.holoeverywhere.widget.CalendarView;
-import org.holoeverywhere.widget.CheckBox;
-import org.holoeverywhere.widget.CheckedTextView;
-import org.holoeverywhere.widget.DatePicker;
-import org.holoeverywhere.widget.Divider;
-import org.holoeverywhere.widget.EditText;
-import org.holoeverywhere.widget.ExpandableListView;
-import org.holoeverywhere.widget.FrameLayout;
-import org.holoeverywhere.widget.GridView;
-import org.holoeverywhere.widget.LinearLayout;
-import org.holoeverywhere.widget.ListView;
-import org.holoeverywhere.widget.ModalBackgroundWrapper;
-import org.holoeverywhere.widget.MultiAutoCompleteTextView;
-import org.holoeverywhere.widget.NumberPicker;
-import org.holoeverywhere.widget.ProgressBar;
-import org.holoeverywhere.widget.RadioButton;
-import org.holoeverywhere.widget.SeekBar;
-import org.holoeverywhere.widget.Spinner;
-import org.holoeverywhere.widget.Switch;
-import org.holoeverywhere.widget.TextView;
-import org.holoeverywhere.widget.TimePicker;
-import org.holoeverywhere.widget.ToggleButton;
 import org.xmlpull.v1.XmlPullParser;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build.VERSION;
-import android.support.v4.view.PagerTitleStrip;
-import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.WebView;
 
 import com.actionbarsherlock.internal.view.menu.ContextMenuDecorView;
 import com.actionbarsherlock.internal.view.menu.ContextMenuListener;
 import com.actionbarsherlock.internal.view.menu.ExpandedMenuView;
-import com.actionbarsherlock.internal.view.menu.HoloListMenuItemView;
+import com.actionbarsherlock.internal.view.menu.ListMenuItemView;
 import com.actionbarsherlock.internal.widget.ActionBarContainer;
 import com.actionbarsherlock.internal.widget.ActionBarView;
 
@@ -91,38 +65,16 @@ public class LayoutInflater extends android.view.LayoutInflater implements
 
     private static final Map<Context, WeakReference<LayoutInflater>> INSTANCES_MAP = new WeakHashMap<Context, WeakReference<LayoutInflater>>();
     private static OnInitInflaterListener listener;
+    private static final List<String> PACKAGES_LIST = new ArrayList<String>();
     private static final Map<String, String> VIEWS_MAP = new HashMap<String, String>();
 
     static {
-        remap(ProgressBar.class);
-        remap(LinearLayout.class);
-        remap(Switch.class);
-        remap(TextView.class);
-        remap(EditText.class);
-        remap(AutoCompleteTextView.class);
-        remap(MultiAutoCompleteTextView.class);
-        remap(CalendarView.class);
-        remap(Spinner.class);
-        remap(NumberPicker.class);
-        remap(DatePicker.class);
-        remap(TimePicker.class);
-        remap(ListView.class);
-        remap(Divider.class);
-        remap(SeekBar.class);
-        remap(Button.class);
-        remap(CheckedTextView.class);
-        remap(ToggleButton.class);
-        remap(RadioButton.class);
-        remap(CheckBox.class);
-        remap(ViewPager.class);
-        remap(PagerTitleStrip.class);
-        remap(WebView.class);
-        remap(FrameLayout.class);
-        remap(GridView.class);
-        remap(ViewPager.class);
-        remap(ModalBackgroundWrapper.class);
-        remap(ExpandableListView.class);
-        remapInternal(ActionBarView.class, HoloListMenuItemView.class,
+        registerPackage(HoloEverywhere.PACKAGE + ".widget");
+        registerPackage("android.support.v4.view");
+        registerPackage("android.widget");
+        registerPackage("android.view");
+        registerPackage("android.webkit");
+        remapInternal(ActionBarView.class, ListMenuItemView.class,
                 ExpandedMenuView.class, ActionBarContainer.class, DialogTitle.class,
                 NumberPickerEditText.class);
     }
@@ -185,6 +137,13 @@ public class LayoutInflater extends android.view.LayoutInflater implements
 
     public static void onDestroy(Context context) {
         LayoutInflater.INSTANCES_MAP.remove(context);
+    }
+
+    public static void registerPackage(String packageName) {
+        packageName = Package.getPackage(packageName).getName();
+        if (!PACKAGES_LIST.contains(packageName)) {
+            PACKAGES_LIST.add(packageName);
+        }
     }
 
     public static void remap(Class<? extends View>... classes) {
@@ -319,16 +278,13 @@ public class LayoutInflater extends android.view.LayoutInflater implements
                 return prepareView(view);
             }
         }
-        view = tryCreateView(name, "android.widget.", attrs);
-        if (view != null) {
-            return prepareView(view);
+        for (int i = 0; i < PACKAGES_LIST.size(); i++) {
+            view = tryCreateView(name, PACKAGES_LIST.get(i) + ".", attrs);
+            if (view != null) {
+                return prepareView(view);
+            }
         }
-        view = tryCreateView(name, "android.view.", attrs);
-        if (view != null) {
-            return prepareView(view);
-        } else {
-            throw new ClassNotFoundException("Could not find class: " + name);
-        }
+        throw new ClassNotFoundException("Could not find class: " + name);
     }
 
     @Override

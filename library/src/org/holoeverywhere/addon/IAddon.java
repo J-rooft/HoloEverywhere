@@ -1,5 +1,5 @@
 
-package org.holoeverywhere.addons;
+package org.holoeverywhere.addon;
 
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -10,8 +10,9 @@ import org.holoeverywhere.app.Fragment;
 public abstract class IAddon<A extends IAddonActivity, F extends IAddonFragment> {
     private final Map<Object, Object> statesMap = new WeakHashMap<Object, Object>();
 
+    @SuppressWarnings("unchecked")
     public A activity(Activity activity) {
-        A addon = get(activity);
+        A addon = (A) get(activity);
         if (addon == null) {
             addon = createAddon(activity);
             put(activity, addon);
@@ -35,8 +36,9 @@ public abstract class IAddon<A extends IAddonActivity, F extends IAddonFragment>
         return null;
     }
 
+    @SuppressWarnings("unchecked")
     public F fragment(Fragment fragment) {
-        F addon = get(fragment);
+        F addon = (F) get(fragment);
         if (addon == null) {
             addon = createAddon(fragment);
             put(fragment, addon);
@@ -44,9 +46,8 @@ public abstract class IAddon<A extends IAddonActivity, F extends IAddonFragment>
         return addon;
     }
 
-    @SuppressWarnings("unchecked")
-    public <T> T get(Object key) {
-        return (T) statesMap.get(key);
+    public Object get(Object key) {
+        return statesMap.get(key);
     }
 
     public void put(Object key, Object value) {

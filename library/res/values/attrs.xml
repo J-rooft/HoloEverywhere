@@ -39,10 +39,12 @@
 	<attr name="autoCompleteTextViewStyle" format="reference" />
 	<attr name="panelMenuListWidth" format="dimension" />
 	<attr name="textAppearanceListItem" format="reference" />
+	<attr name="colorPickerStyle" format="reference" />
 	<attr name="holoTheme">
 		<enum name="invalid" value="0" />
 		<enum name="dark" value="1" />
 		<enum name="light" value="2" />
+		<enum name="mixed" value="3" />
 	</attr>
 	<attr name="modalBackgroundWrapper" format="reference" />
 	<attr name="gravity">
@@ -248,5 +250,28 @@
 			<enum name="atThumb" value="1" />
 		</attr>
 		<attr name="fastScrollTextColor" format="color" />
+	</declare-styleable>
+	<declare-styleable name="LayerDrawable">
+		<attr name="android:opacity" />
+	</declare-styleable>
+	<declare-styleable name="LayerDrawableItem">
+		<attr name="android:left" />
+		<attr name="android:top" />
+		<attr name="android:right" />
+		<attr name="android:bottom" />
+		<attr name="android:drawable" />
+		<attr name="android:id" />
+	</declare-styleable>
+	<declare-styleable name="PopupWindow">
+		<attr name="android:popupBackground" />
+		<attr name="android:popupAnimationStyle" />
+	</declare-styleable>
+	<declare-styleable name="StateListDrawable">
+		<attr name="android:visible" />
+		<attr name="android:variablePadding" />
+		<attr name="android:constantSize" />
+		<attr name="android:dither" />
+		<attr name="android:enterFadeDuration" />
+		<attr name="android:exitFadeDuration" />
 	</declare-styleable>
 </resources>

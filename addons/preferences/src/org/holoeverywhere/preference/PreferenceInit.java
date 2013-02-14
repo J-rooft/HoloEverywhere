@@ -3,7 +3,6 @@ package org.holoeverywhere.preference;
 
 import org.holoeverywhere.LayoutInflater;
 import org.holoeverywhere.ThemeManager;
-import org.holoeverywhere.widget.FragmentBreadCrumbs;
 
 public class PreferenceInit {
     public static final String PACKAGE;
@@ -13,15 +12,10 @@ public class PreferenceInit {
         PACKAGE = PreferenceInit.class.getPackage().getName();
         THEME_FLAG = ThemeManager.makeNewFlag();
 
-        ThemeManager.map(THEME_FLAG | ThemeManager.DARK,
-                R.style.Holo_PreferenceTheme_Dark);
-        ThemeManager.map(THEME_FLAG | ThemeManager.LIGHT,
-                R.style.Holo_PreferenceTheme_Light);
-        ThemeManager.map(THEME_FLAG | ThemeManager.MIXED,
-                R.style.Holo_PreferenceTheme_Light);
-
         LayoutInflater.remap(PreferenceFrameLayout.class);
         LayoutInflater.remap(FragmentBreadCrumbs.class);
+
+        map(R.style.Holo_PreferenceTheme, R.style.Holo_PreferenceTheme_Light);
     }
 
     /**
@@ -29,6 +23,36 @@ public class PreferenceInit {
      */
     public static void init() {
 
+    }
+
+    /**
+     * Remap all Preference themes
+     */
+    public static void map(int theme) {
+        map(theme, theme, theme);
+    }
+
+    /**
+     * Remap PreferenceThemes, splited by dark and light color scheme. For mixed
+     * color scheme will be using light theme
+     */
+    public static void map(int darkTheme, int lightTheme) {
+        map(darkTheme, lightTheme, lightTheme);
+    }
+
+    /**
+     * Remap PreferenceThemes, splited by color scheme
+     */
+    public static void map(int darkTheme, int lightTheme, int mixedTheme) {
+        if (darkTheme > 0) {
+            ThemeManager.map(THEME_FLAG | ThemeManager.DARK, darkTheme);
+        }
+        if (lightTheme > 0) {
+            ThemeManager.map(THEME_FLAG | ThemeManager.LIGHT, lightTheme);
+        }
+        if (mixedTheme > 0) {
+            ThemeManager.map(THEME_FLAG | ThemeManager.MIXED, mixedTheme);
+        }
     }
 
     private PreferenceInit() {
