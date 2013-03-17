@@ -1,5 +1,4 @@
 {
-	"styles": {
 		"blocks": {
 			"PreferenceBase": {
 				"checkBoxPreferenceStyle": "@style/Holo.PreferenceCheckBox", 
@@ -19,18 +18,12 @@
                 "seekBarPreferenceStyle": "@style/Holo.PreferenceSeekBar", 
                 "switchPreferenceStyle": "@style/Holo.PreferenceSwitch", 
                 "yesNoPreferenceStyle": "@style/Holo.PreferenceDialog.YesNoPreference",
+                "holoTheme": "preference"
 			}
 		},
 		"data": {
-			"Holo.PreferenceTheme": {
-				"include": [ "PreferenceBase" ],
-				"parent": "Holo.Theme"
-			},
-			"Holo.PreferenceTheme.Light": {
-				"include": [ "PreferenceBase" ],
-				"parent": "Holo.Theme.Light"
-			}
+			"Holo.PreferenceTheme | PreferenceBase < Holo.Theme": {},
+			"Holo.PreferenceTheme.Light | PreferenceBase < Holo.Theme.Light": {}
 		},
 		"output": "values/themes.xml"
-	}
 }

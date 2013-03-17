@@ -2,7 +2,6 @@
 package org.holoeverywhere.preference;
 
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.Checkable;
@@ -18,13 +17,6 @@ public class CheckBoxPreference extends TwoStatePreference {
 
     public CheckBoxPreference(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        TypedArray a = context.obtainStyledAttributes(attrs,
-                R.styleable.CheckBoxPreference, defStyle, 0);
-        setSummaryOn(a.getString(R.styleable.CheckBoxPreference_summaryOn));
-        setSummaryOff(a.getString(R.styleable.CheckBoxPreference_summaryOff));
-        setDisableDependentsState(a.getBoolean(
-                R.styleable.CheckBoxPreference_disableDependentsState, false));
-        a.recycle();
     }
 
     @Override

@@ -3,14 +3,19 @@ package org.holoeverywhere.addon;
 
 import org.holoeverywhere.app.Fragment;
 
-public abstract class IAddonFragment extends IAddonBase {
-    private Fragment fragment;
+import android.os.Bundle;
+import android.view.View;
 
-    public IAddonFragment(Fragment fragment) {
-        this.fragment = fragment;
+public abstract class IAddonFragment extends IAddonBase<Fragment> {
+    public void onCreate(Bundle savedInstanceState) {
+
     }
 
-    public Fragment getFragment() {
-        return fragment;
+    public void onPreCreate(Bundle savedInstanceState) {
+
+    }
+
+    public void onViewCreated(View view) {
+
     }
 }

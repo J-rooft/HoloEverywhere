@@ -20,10 +20,11 @@
 	<inceptionYear>2012</inceptionYear>
 
 	<modules>
-		<module>addons</module>
-		<module>resbuilder</module>
-		<module>demo</module>
 		<module>library</module>
+		<module>addons</module>
+		<module>application</module>
+		<module>demo</module>
+		<module>resbuilder</module>
 	</modules>
 
 	<scm>
@@ -46,6 +47,7 @@
 				<role>developer</role>
 			</roles>
 		</developer>
+
 		<developer>
 			<name>Sergey Shatunov</name>
 			<id>Prototik</id>
@@ -64,33 +66,45 @@
 
 	<distributionManagement>
 		<repository>
-			<uniqueVersion>true</uniqueVersion>
-			<id>${project.repo.release.id}</id>
+			<id>holoeverywhere-repo</id>
 			<name>HoloEverywhere Repo</name>
-			<url>${project.release.repository.url}</url>
+			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+			<uniqueVersion>true</uniqueVersion>
 		</repository>
+
 		<snapshotRepository>
-			<uniqueVersion>false</uniqueVersion>
-			<id>${project.repo.snapshots.id}</id>
+			<id>holoeverywhere-repo-snapshots</id>
 			<name>HoloEverywhere Repo Snapshots</name>
-			<url>${project.snapshots.repository.url}</url>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<uniqueVersion>false</uniqueVersion>
 		</snapshotRepository>
+
+		<site>
+			<id>holoeverywhere-website</id>
+			<name>HoloEverywhere Website</name>
+			<url>http://holoeverywhere.org/</url>
+		</site>
 	</distributionManagement>
+
+	<licenses>
+		<license>
+			<name>LGPLv3</name>
+			<url>https://raw.github.com/ChristopheVersieux/HoloEverywhere/master/LICENSE</url>
+			<distribution>repo</distribution>
+			<comments>Copyright (c) 2012 Christophe Versieux, Sergey Shatunov</comments>
+		</license>
+	</licenses>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-		<project.repo.release.id>holoeverywhere-repo</project.repo.release.id>
-		<project.release.repository.url>https://oss.sonatype.org/service/local/staging/deploy/maven2</project.release.repository.url>
-
-		<project.repo.snapshots.id>holoeverywhere-repo-snapshots</project.repo.snapshots.id>
-		<project.snapshots.repository.url>https://oss.sonatype.org/content/repositories/snapshots</project.snapshots.repository.url>
-
 		<java.version>1.6</java.version>
 		<abs.version>4.2.0</abs.version>
 		<noa.version>2.4.0</noa.version>
+		<junit.version>4.8.1</junit.version>
 		<android.version>4.1.1.4</android.version>
+		<android.support.version>r12</android.support.version>
 		<android.sdk.platform>16</android.sdk.platform>
 
 		<github.downloads.repositoryOwner>ChristopheVersieux</github.downloads.repositoryOwner>
@@ -108,11 +122,37 @@
 				<version>${android.version}</version>
 				<scope>provided</scope>
 			</dependency>
+
+			<dependency>
+				<groupId>com.google.android</groupId>
+				<artifactId>support-v4</artifactId>
+				<version>${android.support.version}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>com.google.android</groupId>
+				<artifactId>android-test</artifactId>
+				<version>${android.version}</version>
+				<scope>provided</scope>
+			</dependency>
+
+			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<version>${junit.version}</version>
+			</dependency>
+
 			<dependency>
 				<groupId>com.actionbarsherlock</groupId>
 				<artifactId>actionbarsherlock</artifactId>
 				<version>${abs.version}</version>
 				<type>apklib</type>
+			</dependency>
+
+			<dependency>
+				<groupId>com.nineoldandroids</groupId>
+				<artifactId>library</artifactId>
+				<version>${noa.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -163,7 +203,7 @@
 				<plugin>
 					<groupId>com.jayway.maven.plugins.android.generation2</groupId>
 					<artifactId>android-maven-plugin</artifactId>
-					<version>3.5.0</version>
+					<version>3.5.1</version>
 					<inherited>true</inherited>
 					<extensions>true</extensions>
 					<configuration>
@@ -177,9 +217,6 @@
 						<proguard>
 							<skip>true</skip>
 						</proguard>
-						<test>
-							<skip>true</skip>
-						</test>
 					</configuration>
 				</plugin>
 
@@ -211,11 +248,7 @@
 
 				<plugin>
 					<artifactId>maven-surefire-plugin</artifactId>
-					<version>2.12.4</version>
-					<inherited>true</inherited>
-					<configuration>
-						<skip>true</skip>
-					</configuration>
+					<version>2.13</version>
 				</plugin>
 
 				<plugin>
@@ -288,6 +321,9 @@
 					<name>performRelease</name>
 					<value>true</value>
 				</property>
+				<file>
+					<exists>${project.basedir}/AndroidManifest.xml</exists>
+				</file>
 			</activation>
 			<build>
 				<pluginManagement>

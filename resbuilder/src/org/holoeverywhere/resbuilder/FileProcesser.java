@@ -25,6 +25,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.holoeverywhere.resbuilder.type.attrs.TypeAttrs;
 import org.holoeverywhere.resbuilder.type.strings.TypeStrings;
 import org.holoeverywhere.resbuilder.type.styles.TypeStyles;
 import org.json.JSONObject;
@@ -50,11 +51,8 @@ public class FileProcesser {
         }
 
         private static final long serialVersionUID = 6761878269956927443L;
-
         private static final Transformer TRANSFORMER;
-
         private static final TransformerFactory TRANSFORMER_FACTORY;
-
         private static final Map<File, WriterState> WRITERS_MAP = new HashMap<File, WriterState>();
         private static final XMLOutputFactory XML_OUTPUT_FACTORY;
         static {
@@ -122,13 +120,14 @@ public class FileProcesser {
                 if (dir == null) {
                     dir = mojo.outputDir;
                 }
+                File file = new File(dir, filename);
+                dir = file.getParentFile();
                 if (!dir.exists()) {
                     if (mojo.verbose) {
                         mojo.getLog().info("Create new folder: " + dir.getAbsolutePath());
                     }
                     dir.mkdirs();
                 }
-                File file = new File(dir, filename);
                 WriterState state;
                 synchronized (WRITERS_MAP) {
                     state = WRITERS_MAP.get(file);
@@ -158,6 +157,7 @@ public class FileProcesser {
         PROCESSERS_MAP = new HashMap<String, TypeProcesser>();
         registerProcesser(TypeStrings.class);
         registerProcesser(TypeStyles.class);
+        registerProcesser(TypeAttrs.class);
     }
 
     public static void process(BuildMojo mojo) throws FileProcesserException {
@@ -191,12 +191,20 @@ public class FileProcesser {
         result.flush(mojo);
     }
 
-    @SuppressWarnings("unchecked")
     public ProcessResult process(File file) throws FileProcesserException {
+        return process(file, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public ProcessResult process(File file, String forceType) throws FileProcesserException {
         try {
             mojo.getLog().info("Process file: " + file.getAbsolutePath());
             String fileContent = readFile(file);
             JSONObject json = new JSONObject(fileContent);
+            if (forceType != null) {
+                mojo.getLog().info("Handle all file by key '" + forceType + "' (force)");
+                return process(forceType, json);
+            }
             if (file.getName().startsWith("key_")) {
                 String key = file.getName();
                 int c = key.lastIndexOf('.');
@@ -220,15 +228,22 @@ public class FileProcesser {
     }
 
     public ProcessResult process(String filename) throws FileProcesserException {
+        String forceType = null;
+        int c = filename.lastIndexOf(':');
+        if (c > 0) {
+            // Filename: data.json:styles
+            forceType = filename.substring(c + 1);
+            filename = filename.substring(0, c);
+        }
         File file;
         for (File includeDir : mojo.includeDirs) {
             file = new File(includeDir, filename);
             if (file.exists()) {
-                return process(file);
+                return process(file, forceType);
             }
         }
         if ((file = new File(filename)).exists()) {
-            return process(file);
+            return process(file, forceType);
         }
         throw new FileProcesserException("Couldn't find file for processing: " + filename);
     }

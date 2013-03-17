@@ -5,6 +5,7 @@ import org.holoeverywhere.ThemeManager;
 import org.holoeverywhere.addon.AddonSlidingMenu;
 import org.holoeverywhere.addon.AddonSlidingMenu.AddonSlidingMenuA;
 import org.holoeverywhere.app.Activity;
+import org.holoeverywhere.app.Activity.Addons;
 import org.holoeverywhere.app.Fragment;
 import org.holoeverywhere.demo.fragments.AboutFragment;
 import org.holoeverywhere.demo.fragments.MainFragment;
@@ -31,6 +32,7 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 import com.slidingmenu.lib.SlidingMenu;
 
+@Addons(Activity.ADDON_SLIDING_MENU)
 public class DemoActivity extends Activity implements OnBackStackChangedListener {
     private final class NavigationAdapter extends DemoAdapter implements
             OnItemClickListener {
@@ -51,8 +53,8 @@ public class DemoActivity extends Activity implements OnBackStackChangedListener
             if (position < 0) {
                 position = 0;
             }
-            if (mCurrentPage != position || mStaticSlidingMenu
-                    && getSupportFragmentManager().getBackStackEntryCount() > 0) {
+            if (mCurrentPage != position || setData && getSupportFragmentManager()
+                    .getBackStackEntryCount() > 0) {
                 mCurrentPage = position;
                 if (mOnMenuClickListener != null) {
                     mOnMenuClickListener.onMenuClick(position);
@@ -93,7 +95,7 @@ public class DemoActivity extends Activity implements OnBackStackChangedListener
             postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    requireSlidingMenu().showContent();
+                    addonSlidingMenu().showContent();
                 }
             }, 100);
         }
@@ -103,20 +105,28 @@ public class DemoActivity extends Activity implements OnBackStackChangedListener
         public void onMenuClick(int position);
     }
 
-    private static final String KEY_DISABLE_MUSIC = "disableMusic";
+    public static final String KEY_DISABLE_MUSIC = "disableMusic";
     private static final String KEY_PAGE = "page";
+    private boolean mCreatedByThemeManager = false;
     private int mCurrentPage = -1;
+    private boolean mDisableMusic = false;
+    private boolean mFirstRun;
     private Handler mHandler;
     private NavigationAdapter mNavigationAdapter;
-
     private OnMenuClickListener mOnMenuClickListener;
+    private boolean mStaticSlidingMenu;
 
-    private boolean mStaticSlidingMenu, mCreatedByThemeManager = false, mDisableMusic = false,
-            mFirstRun;
+    public AddonSlidingMenuA addonSlidingMenu() {
+        return addon(AddonSlidingMenu.class);
+    }
 
     private int computeMenuWidth() {
         return (int) getResources().getFraction(R.dimen.demo_menu_width,
                 getResources().getDisplayMetrics().widthPixels, 1);
+    }
+
+    public boolean isDisableMusic() {
+        return mDisableMusic;
     }
 
     private View makeMenuView(Bundle savedInstanceState) {
@@ -134,7 +144,7 @@ public class DemoActivity extends Activity implements OnBackStackChangedListener
 
     @Override
     public void onBackStackChanged() {
-        if (!mStaticSlidingMenu) {
+        if (mStaticSlidingMenu) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(
                     getSupportFragmentManager().getBackStackEntryCount() > 0);
         }
@@ -164,13 +174,13 @@ public class DemoActivity extends Activity implements OnBackStackChangedListener
 
         setContentView(R.layout.content);
 
-        final AddonSlidingMenuA addonSM = requireSlidingMenu();
+        final AddonSlidingMenuA addonSM = addonSlidingMenu();
         final SlidingMenu sm = addonSM.getSlidingMenu();
 
         View menu = findViewById(R.id.menu);
         if (menu == null) {
             // Phone
-            mStaticSlidingMenu = true;
+            mStaticSlidingMenu = false;
             ab.setDisplayHomeAsUpEnabled(true);
             addonSM.setBehindContentView(makeMenuView(savedInstanceState));
             addonSM.setSlidingActionBarEnabled(true);
@@ -179,7 +189,7 @@ public class DemoActivity extends Activity implements OnBackStackChangedListener
             sm.setSlidingEnabled(true);
         } else {
             // Tablet
-            mStaticSlidingMenu = false;
+            mStaticSlidingMenu = true;
             addonSM.setBehindContentView(new View(this)); // dummy view
             sm.setTouchModeAbove(SlidingMenu.TOUCHMODE_NONE);
             sm.setSlidingEnabled(false);
@@ -190,19 +200,18 @@ public class DemoActivity extends Activity implements OnBackStackChangedListener
     }
 
     @Override
-    protected Holo onCreateConfig(Bundle savedInstanceState) {
-        Holo config = super.onCreateConfig(savedInstanceState);
-        config.requireSlidingMenu = true;
-        return config;
-    }
-
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getSupportMenuInflater().inflate(R.menu.main, menu);
         if (mDisableMusic) {
             menu.findItem(R.id.disableMusic).setVisible(false);
         }
         return true;
+    }
+
+    @Override
+    protected void onDestroy() {
+        PlaybackService.pause(true);
+        super.onDestroy();
     }
 
     @Override
@@ -216,8 +225,9 @@ public class DemoActivity extends Activity implements OnBackStackChangedListener
                 }
                 break;
             case android.R.id.home:
-                if (mStaticSlidingMenu && getSupportFragmentManager().getBackStackEntryCount() == 0) {
-                    requireSlidingMenu().toggle();
+                if (!mStaticSlidingMenu
+                        && getSupportFragmentManager().getBackStackEntryCount() == 0) {
+                    addonSlidingMenu().toggle();
                 } else {
                     onBackPressed();
                 }
@@ -236,8 +246,8 @@ public class DemoActivity extends Activity implements OnBackStackChangedListener
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
-        if (mCreatedByThemeManager) {
-            savedInstanceState = instanceState(savedInstanceState);
+        savedInstanceState = instanceState(savedInstanceState);
+        if (mCreatedByThemeManager && savedInstanceState != null) {
             savedInstanceState.putBoolean("SlidingActivityHelper.open", false);
             savedInstanceState.putBoolean("SlidingActivityHelper.secondary", false);
         }
@@ -292,10 +302,6 @@ public class DemoActivity extends Activity implements OnBackStackChangedListener
         }
         ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
         ft.commit();
-    }
-
-    public AddonSlidingMenuA requireSlidingMenu() {
-        return requireAddon(AddonSlidingMenu.class).activity(this);
     }
 
     public void setOnMenuClickListener(OnMenuClickListener onMenuClickListener) {

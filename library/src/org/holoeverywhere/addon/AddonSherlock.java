@@ -1,11 +1,9 @@
 
 package org.holoeverywhere.addon;
 
-import org.holoeverywhere.addon.AddonSherlock.AddonSherlockA;
-import org.holoeverywhere.addon.AddonSherlock.AddonSherlockF;
 import org.holoeverywhere.app.Activity;
-import org.holoeverywhere.app.Fragment;
 
+import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.KeyEvent;
@@ -17,22 +15,18 @@ import android.view.Window;
 
 import com.actionbarsherlock.ActionBarSherlock;
 import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.internal.ActionBarSherlockCompat;
+import com.actionbarsherlock.internal.ActionBarSherlockNative;
 import com.actionbarsherlock.view.ActionMode;
 import com.actionbarsherlock.view.ActionMode.Callback;
 import com.actionbarsherlock.view.MenuInflater;
 
-public class AddonSherlock extends IAddon<AddonSherlockA, AddonSherlockF> {
+public class AddonSherlock extends IAddon {
     public static class AddonSherlockA extends IAddonActivity {
         private boolean mIgnoreNativeCreate = false;
-
         private boolean mIgnoreNativePrepare = false;
-
         private boolean mIgnoreNativeSelected = false;
         private ActionBarSherlock mSherlock;
-
-        public AddonSherlockA(Activity activity) {
-            super(activity);
-        }
 
         @Override
         public boolean addContentView(View view, LayoutParams params) {
@@ -60,8 +54,7 @@ public class AddonSherlock extends IAddon<AddonSherlockA, AddonSherlockF> {
 
         protected ActionBarSherlock getSherlock() {
             if (mSherlock == null) {
-                mSherlock = ActionBarSherlock.wrap(getActivity(),
-                        ActionBarSherlock.FLAG_DELEGATE);
+                mSherlock = ActionBarSherlock.wrap(get(), ActionBarSherlock.FLAG_DELEGATE);
             }
             return mSherlock;
         }
@@ -92,6 +85,14 @@ public class AddonSherlock extends IAddon<AddonSherlockA, AddonSherlockF> {
         @Override
         public void onDestroy() {
             getSherlock().dispatchDestroy();
+        }
+
+        @Override
+        public boolean onKeyUp(int keyCode, KeyEvent event) {
+            if (keyCode == KeyEvent.KEYCODE_MENU) {
+                openOptionsMenu();
+            }
+            return super.onKeyUp(keyCode, event);
         }
 
         @Override
@@ -202,19 +203,44 @@ public class AddonSherlock extends IAddon<AddonSherlockA, AddonSherlockF> {
         }
     }
 
-    public static class AddonSherlockF extends IAddonFragment {
-        public AddonSherlockF(Fragment fragment) {
-            super(fragment);
+    @ActionBarSherlock.Implementation(api = 7)
+    private static class HoloActionBarSherlockCompat extends ActionBarSherlockCompat {
+        public HoloActionBarSherlockCompat(android.app.Activity activity, int flags) {
+            super(activity, flags);
+        }
+
+        @Override
+        protected Context getThemedContext() {
+            if (mActivity instanceof Activity) {
+                return ((Activity) mActivity).getSupportActionBarContext();
+            }
+            return super.getThemedContext();
         }
     }
 
-    @Override
-    public AddonSherlockA createAddon(Activity activity) {
-        return new AddonSherlockA(activity);
+    @ActionBarSherlock.Implementation(api = 14)
+    private static class HoloActionBarSherlockNative extends ActionBarSherlockNative {
+        public HoloActionBarSherlockNative(android.app.Activity activity, int flags) {
+            super(activity, flags);
+        }
+
+        @Override
+        protected Context getThemedContext() {
+            if (mActivity instanceof Activity) {
+                return ((Activity) mActivity).getSupportActionBarContext();
+            }
+            return super.getThemedContext();
+        }
     }
 
-    @Override
-    public AddonSherlockF createAddon(Fragment fragment) {
-        return new AddonSherlockF(fragment);
+    static {
+        ActionBarSherlock.unregisterImplementation(ActionBarSherlockNative.class);
+        ActionBarSherlock.unregisterImplementation(ActionBarSherlockCompat.class);
+        ActionBarSherlock.registerImplementation(HoloActionBarSherlockNative.class);
+        ActionBarSherlock.registerImplementation(HoloActionBarSherlockCompat.class);
+    }
+
+    public AddonSherlock() {
+        register(Activity.class, AddonSherlockA.class);
     }
 }
